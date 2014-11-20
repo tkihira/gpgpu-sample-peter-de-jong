@@ -41,6 +41,7 @@
 		}
 		status.x = 0;
 		status.y = 0;
+		status.ragian = Math.random() * Math.PI * 2;
 		generation();
 	};
 	var generation = function() {
@@ -59,6 +60,38 @@
 		status.counterDIV && (status.counterDIV.innerHTML = status.counter);
 		setTimeout(generation, 0);
 	};
+	var makeColor = function(ratio, ragian) {
+		if(ratio > 1) {
+			ratio = 1;
+		}
+		if(ragian < 0) {
+			ragian += Math.PI * 2;
+		}
+		if(ragian >= Math.PI * 2) {
+			ragian -= Math.PI * 2;
+		}
+		var h1 = (ragian * 3 / Math.PI) | 0;
+		var s = 1;
+		var f = ragian / (Math.PI / 3) - h1;
+		var p = 1 * (1 - s);
+		var q = 1 * (1 - f * s);
+		var t = 1 * (1 - (1 - f) * s);
+		var r, g, b;
+		switch(h1) {
+			case 0: r = 1; g = t; b = p; break;
+			case 1: r = q; g = 1; b = p; break;
+			case 2: r = p; g = 1; b = t; break;
+			case 3: r = p; g = q; b = 1; break;
+			case 4: r = t; g = p; b = 1; break;
+			case 5: r = 1; g = p; b = 1; break;
+		}
+		var c = 1 - Math.pow(1 - ratio, 150);
+		return {
+			r: (Math.pow(c, 3 - r * 1.5) * 255) | 0,
+			g: (Math.pow(c, 3 - g * 1.5) * 255) | 0,
+			b: (Math.pow(c, 3 - b * 1.5) * 255) | 0
+		};
+	};
 	var show = function() {
 		var data = status.imageData.data;
 		var pixels = 0;
@@ -66,11 +99,14 @@
 			for(var y = 0; y < config.height; y++) {
 				var pos = x + y * config.width;
 				var ratio = status.bin[pos] * config.height / (status.counter - config.warming);
-				var l = 1 - Math.pow(1 - ratio, 150);
 				pos *= 4;
-				data[pos] = data[pos + 1] = data[pos + 2] = (l * 255) | 0;
+				
+				var c = makeColor(ratio, status.ragian);
+				data[pos + 0] = c.r;
+				data[pos + 1] = c.g;
+				data[pos + 2] = c.b;
 				data[pos + 3] = 255;
-				if((l * 255) | 0 != 0) {
+				if(c.r || c.g || c.b) {
 					pixels++;
 				}
 			}
