@@ -1,0 +1,85 @@
+<html><head><title>Attractor test</title>
+<script>
+(function() {
+	var ctx;
+	var config = {
+		a: -2.7,
+		b: -0.09,
+		c: -0.86,
+		d: -2.2,
+		width: 512,
+		height: 512,
+		warming: 10000,
+		repetation: 1000000,
+		reflesh: 30000000,
+		random: true
+	};
+	var status = {};
+	window.onload = function() {
+		var canvas = document.getElementById("canvas");
+		canvas.width = config.width;
+		canvas.height = config.height;
+		ctx = canvas.getContext("2d");
+		status.counterDIV = document.getElementById("counter");
+		status.imageData = ctx.createImageData(config.width, config.height);
+		initialize();
+	};
+	var randomize = function() {
+		config.a = Math.random() * 6 - 3;
+		config.b = Math.random() * 6 - 3;
+		config.c = Math.random() * 6 - 3;
+		config.d = Math.random() * 6 - 3;
+	};
+	var initialize = function() {
+		if(config.random) {
+			randomize();
+		}
+		status.counter = 0;
+		status.bin = [];
+		for(var i = 0; i < config.width * config.height; i++) {
+			status.bin[i] = 0;
+		}
+		status.x = 0;
+		status.y = 0;
+		generation();
+	};
+	var generation = function() {
+		for(var i = 0; i < config.repetation; i++) {
+			status.counter++;
+			var nx = Math.sin(config.a * status.y) - Math.cos(config.b * status.x);
+			var ny = Math.sin(config.c * status.x) - Math.cos(config.d * status.y);
+			status.x = nx;
+			status.y = ny;
+			if(status.counter > config.warming) {
+				var pos = ((nx / 4 + 0.5) * config.width) | 0 + (((ny / 4 + 0.5) * config.height) | 0) * config.width;
+				status.bin[pos]++;
+			}
+		}
+		show();
+		status.counterDIV && (status.counterDIV.innerHTML = status.counter);
+		setTimeout(generation, 0);
+	};
+	var show = function() {
+		var data = status.imageData.data;
+		var pixels = 0;
+		for(var x = 0; x < config.width; x++) {
+			for(var y = 0; y < config.height; y++) {
+				var pos = x + y * config.width;
+				var ratio = status.bin[pos] * config.height / (status.counter - config.warming);
+				var l = 1 - Math.pow(1 - ratio, 150);
+				pos *= 4;
+				data[pos] = data[pos + 1] = data[pos + 2] = (l * 255) | 0;
+				data[pos + 3] = 255;
+				if((l * 255) | 0 != 0) {
+					pixels++;
+				}
+			}
+		}
+		ctx.putImageData(status.imageData, 0, 0);
+		if(pixels < config.width * config.height / 200 || status.counter > config.reflesh) {
+			initialize();
+		}
+	};
+})();
+</script>
+</head><body><canvas width="512" height="512" id="canvas"></canvas><br><div id="counter"></div></body></html>
