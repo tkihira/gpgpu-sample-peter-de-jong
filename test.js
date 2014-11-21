@@ -2,11 +2,14 @@
 	var gl;
 	var prog;
 	var img;
+	var canvas;
 	onload = function() {
-		img = document.createElement("img");
-		img.onload = initialize;
-		img.src = "test.jpg";
-		return;
+		if(false) {
+			img = document.createElement("img");
+			img.onload = initialize;
+			img.src = "test.jpg";
+			return;
+		}
 		setData();
 		initialize();
 	};
@@ -17,17 +20,40 @@
 		var imageData = ctx.createImageData(512, 512);
 		var data = imageData.data;
 		for(var i = 0; i < 512 * 512; i++) {
-			var v = (Math.random() * 0xFFFFFFFF) >>> 0;
+			var f = Math.random();
+			var v = (f * 0xFFFFFFFF) >>> 0;
 			data[i *4 + 0] = (v >> 24) & 0xFF;
 			data[i *4 + 1] = (v >> 16) & 0xFF;
 			data[i *4 + 2] = (v >> 8) & 0xFF;
 			data[i *4 + 3] = v & 0xFF;
 			data[i *4 + 3] = 0xFF;
+			if(i < 2) {
+				console.log(f * 4 - 2);
+				console.log(data[i*4+0],data[i*4+1],data[i*4+2],data[i*4+3]);
+			}
 		}
 		ctx.putImageData(imageData, 0, 0);
 	};
+	var getData = function() {
+		var dc = document.createElement("canvas");
+		dc.width = dc.height = 512;
+		var ctx = dc.getContext("2d");
+		ctx.drawImage(canvas, 0, 0);
+		console.log("here");
+		document.body.appendChild(dc);
+		var data = ctx.getImageData(0, 0, 512, 512).data;
+		for(var i= 0; i< 2; i++) {
+			var value = 0;
+			value += data[i* 4 + 0] * 0x1000000;
+			value += data[i* 4 + 1] * 0x10000;
+			value += data[i* 4 + 2] * 0x100;
+			value += data[i* 4 + 3];
+			console.log((value / 0xFFFFFFFF) * 4 - 2);
+			console.log(data[i*4+0],data[i*4+1],data[i*4+2],data[i*4+3]);
+		}
+	};
 	var initialize = function() {
-		var canvas = document.getElementById("canvas");
+		canvas = document.getElementById("canvas");
 		document.body.appendChild(img);
 		gl = canvas.getContext("experimental-webgl") || canvas.getContext("webgl");
 		if(!gl) {
@@ -61,10 +87,11 @@
 		}
 		gl.useProgram(prog);
 
-		for(var i = 0; i < 100; i++) {
+		for(var i = 0; i < 1; i++) {
 			loadBuffer();
 			drawFrame();
 		}
+		getData();
 	};
 	var buf;
 	var tex;
