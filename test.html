@@ -1,0 +1,100 @@
+<html><head><title>glsl test</title>
+<script src="test.js"></script>
+<script type="glsl" id="vs">
+precision mediump float;
+attribute vec2 vertex;
+varying vec2 pos;
+void main() {
+	gl_Position = vec4(vertex, 0.0, 1.0);
+	pos = (vertex + 1.0) / 2.0;
+}
+</script>
+<script type="glsl" id="fs">
+precision mediump float;
+varying vec2 pos;
+uniform sampler2D texture;
+uniform vec4 param;
+float decode(vec4 v) {
+	float r = (v.r * 255.) * 16777216.;
+	float g = (v.g * 255.) * 65536.;
+	float b = (v.b * 255.) * 256.;
+	float a = (v.a * 255.);
+	return ((r + g + b + a) / 4294967296.) * 4.0 - 2.0;
+
+/*
+	float r = floor(v.r * 256.0) / 256.0;
+	float g = floor(v.g * 65536.0) / 65536.0;
+	float b = floor(v.b * 16777216.0) / 16777216.0;
+	float a = floor(v.a * 4294967296.0) / 4294967296.0;
+	return (r + g / 256.0 + b / 65536.0 + a / 16777216.0) * 4.0 - 2.0;
+	*/
+}
+vec4 encode(float f) {
+	vec4 r;
+	f = (f + 2.0) / 4.0;
+
+	float F = f * 4294967295.;
+	float a = float(int(F / 16777216.));
+	float b = float(float(int(F / 65536.)) - a * 256.);
+	float c = float(float(int(F / 256.)) - (b * 256. + a) * 256.);
+	float d = float(int(F - (c * 65536. + b * 256. + a) * 256.));
+
+	r.r = a / 255.;
+	r.g = b / 255.; 
+	r.b = c / 255.; 
+	r.a = d / 255.; 
+	return r;
+	/*
+	vec4 r;
+	f = (f + 2.0) / 4.0;
+	//r.a = floor(f * 16777216.0) / 16777216.0;
+	r.a = f * 16777216.0 - floor(f * 16777216.0);
+	r.b = f * 65536.0 - floor(f * 65536.0);
+	r.g = f * 256.0 - floor(f * 256.);
+	r.r = f;
+	return r;
+	*/
+}
+void main() {
+	// decode
+	vec4 xv;
+	vec4 yv;
+	float xpos = floor(gl_FragCoord.x);
+	float isX;
+	if(floor(xpos / 2.0) == xpos / 2.0) {
+		xv = texture2D(texture, pos);
+		yv = texture2D(texture, vec2((xpos + 1.5) / 512.0, pos.y));
+		isX = 1.0;
+	} else {
+		xv = texture2D(texture, vec2((xpos - 0.5) / 512.0, pos.y));
+		yv = texture2D(texture, pos);
+		isX = 0.0;
+	}
+	float x = decode(xv);
+	float y = decode(yv);
+
+	// calc
+	float n;
+	if(isX > 0.5) {
+		// nx
+		n = sin(y * param.x) - cos(x * param.y);
+	} else {
+		// ny
+		n = sin(x * param.z) - cos(y * param.w);
+	}
+	gl_FragColor = encode(n);
+	if(isX > 0.5) {
+		// nx
+		gl_FragColor = encode(x);
+	} else {
+		// ny
+		gl_FragColor = encode(y);
+	}
+	//gl_FragColor.rgba = texture2D(texture, pos);
+	//gl_FragColor.ba = vec2(0.0);
+	gl_FragColor.a = (1.0);
+}
+</script>
+</head>
+<body><canvas id="canvas" width="512" height="512"></canvas></body>
+</html>
