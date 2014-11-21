@@ -12,6 +12,7 @@ void main() {
 </script>
 <script type="glsl" id="fs">
 precision mediump float;
+#define SIZE 1024.
 varying vec2 pos;
 uniform sampler2D texture;
 uniform vec4 param;
@@ -30,12 +31,12 @@ vec4 encode(float f) {
 	float a = float(int(F / 16777216.));
 	float b = float(float(int(F / 65536.)) - a * 256.);
 	float c = float(float(int(F / 256.)) - (b * 256. + a) * 256.);
-	float d = float(int(F - (c * 65536. + b * 256. + a) * 256.));
+	//float d = float(int(F - (c * 65536. + b * 256. + a) * 256.));
 
 	r.r = a / 255.;
 	r.g = b / 255.; 
 	r.b = c / 255.; 
-	r.a = d / 255.; 
+	r.a = 1.; 
 	return r;
 }
 void main() {
@@ -46,17 +47,17 @@ void main() {
 	float isX;
 	if(floor(xpos / 2.0) == xpos / 2.0) {
 		xv = texture2D(texture, pos);
-		yv = texture2D(texture, vec2((xpos + 1.5) / 512.0, pos.y));
+		yv = texture2D(texture, vec2((xpos + 1.5) / SIZE, pos.y));
 		isX = 1.0;
 	} else {
-		xv = texture2D(texture, vec2((xpos - 0.5) / 512.0, pos.y));
+		xv = texture2D(texture, vec2((xpos - 0.5) / SIZE, pos.y));
 		yv = texture2D(texture, pos);
 		isX = 0.0;
 	}
 	float x = decode(xv);
 	float y = decode(yv);
 
-	//* //debug
+	/* //debug
 	vec4 c;
 	if(isX > 0.5) {
 		// nx
@@ -65,7 +66,8 @@ void main() {
 		// ny
 		c = encode(y);
 	}
-	c.a = 1.0;
+//	c.rgba = vec4(0., 0.5, 1.0, 0.1);
+	c.a = 255./255.;
 	gl_FragColor = c;
 	return;
 	//*/
@@ -78,17 +80,16 @@ void main() {
 		// ny
 		n = sin(x * param.z) - cos(y * param.w);
 	}
-	gl_FragColor = encode(n);
-	return;
-	if(gl_FragCoord.y < 512.) {
+	if(gl_FragCoord.y >= SIZE) {
 		gl_FragColor = encode(n);
 	} else {
 		vec4 v;
 		int p = int(((n + 2.) / 4.) * 512.);
 		v.x = float(p / 256);
 		v.y = float(p - (p / 256) * 256);
+		v.a = 1.0;
 		gl_FragColor = v;
-		gl_FragColor = vec4(1., 0., 0., 1.);
+		//gl_FragColor = vec4(1., 0., 0., 1.);
 	}
 	/*
 	//gl_FragColor.rgba = texture2D(texture, pos);
@@ -98,5 +99,5 @@ void main() {
 }
 </script>
 </head>
-<body><canvas id="canvas" width="512" height="512"></canvas></body>
+<body><canvas id="canvas" width="1024" height="2048"></canvas></body>
 </html>

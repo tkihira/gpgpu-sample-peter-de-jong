@@ -4,6 +4,7 @@
 	var img;
 	var canvas;
 	onload = function() {
+		canvas = document.getElementById("canvas");
 		if(false) {
 			img = document.createElement("img");
 			img.onload = initialize;
@@ -15,11 +16,11 @@
 	};
 	var setData = function() {
 		img = document.createElement("canvas");
-		img.width = img.height = 512;
+		img.width = img.height = canvas.width;
 		var ctx = img.getContext("2d");
-		var imageData = ctx.createImageData(512, 512);
+		var imageData = ctx.createImageData(canvas.width, canvas.width);
 		var data = imageData.data;
-		for(var i = 0; i < 512 * 512; i++) {
+		for(var i = 0; i < canvas.width * canvas.width; i++) {
 			var f = Math.random();
 			var v = (f * 0xFFFFFFFF) >>> 0;
 			data[i *4 + 0] = (v >> 24) & 0xFF;
@@ -36,12 +37,11 @@
 	};
 	var getData = function() {
 		var dc = document.createElement("canvas");
-		dc.width = dc.height = 512;
+		dc.width = dc.height = canvas.width;
 		var ctx = dc.getContext("2d");
 		ctx.drawImage(canvas, 0, 0);
-		console.log("here");
 		document.body.appendChild(dc);
-		var data = ctx.getImageData(0, 0, 512, 512).data;
+		var data = ctx.getImageData(0, 0, canvas.width, canvas.width).data;
 		for(var i= 0; i< 2; i++) {
 			var value = 0;
 			value += data[i* 4 + 0] * 0x1000000;
@@ -53,9 +53,9 @@
 		}
 	};
 	var initialize = function() {
-		canvas = document.getElementById("canvas");
 		document.body.appendChild(img);
-		gl = canvas.getContext("experimental-webgl") || canvas.getContext("webgl");
+		var option = { premultipliedAlpha: false };
+		gl = canvas.getContext("experimental-webgl", option) || canvas.getContext("webgl", option);
 		if(!gl) {
 			document.write("your browser does not support webgl");
 			return;
@@ -109,7 +109,7 @@
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	};
 	var drawFrame = function() {
-		gl.clearColor(0, 0, 0, 1);
+		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		var pos = gl.getAttribLocation(prog, "vertex");
