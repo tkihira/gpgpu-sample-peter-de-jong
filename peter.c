@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -8,7 +9,7 @@
 #define REPETATION 5000000
 #define REFLESH 5000000
 #define RANDOM 1
-#define random(x) ((rand() / (double)RAND_MAX + 1.0) * x)
+#define random(x) ((rand() / (double)RAND_MAX) * x)
 #define RGB(r, g, b) (((int)(r) << 16) | ((int)(g) << 8) | (int)(b))
 
 double a = -2.7;
@@ -16,6 +17,7 @@ double b = -0.09;
 double c = -0.86;
 double d = -2.2;
 
+int randomized = 0;
 int bin[WIDTH * HEIGHT];
 int bmp[WIDTH * HEIGHT];
 int counter;
@@ -33,6 +35,10 @@ void randomize() {
 	}
 }
 void initialize() {
+	if(!randomized) {
+		randomized = 1;
+		srand(time(NULL));
+	}
 	for(int i = 0; i < WIDTH * HEIGHT; i++) {
 		bin[i] = 0;
 		bmp[i] = 0;
@@ -44,6 +50,7 @@ void initialize() {
 	if(!cont) {
 		ragian = random(M_PI * 2);
 	}
+	ragian = random(M_PI * 2);
 }
 int makeColor(double ratio, double rag, int flag) {
 	if(ratio > 1) {
@@ -98,12 +105,15 @@ int show(int flag) {
 	}
 	return 0;
 }
-void generation () {
+int getPixel(int pos) {
+	return bmp[pos];
+}
+int generation () {
 	for(int i = 0; i < REPETATION; i++) {
 		if(counter >= REFLESH) {
 			cont = 1;
 			initialize();
-			return;
+			return 0;
 		}
 		counter++;
 		double nx = sin(a * y) - cos(b * x);
@@ -115,15 +125,22 @@ void generation () {
 			bin[pos]++;
 			if(counter == WARMING) {
 				if(show(1)) {
-					return;
+					return 0;
 				}
 			}
 		}
 	}
 	if(show(0)) {
-		return;
+		return 0;
 	}
+	return 1;
 }
-int main(void) {
 
+/*
+int main() {
+	initialize();
+	int start = clock();
+	generation();
+	printf("%lf\n", (double)(clock() - start) / CLOCKS_PER_SEC);
 }
+*/
