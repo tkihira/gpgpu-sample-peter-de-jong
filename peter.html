@@ -10,9 +10,10 @@
 		width: 512 / 1,
 		height: 512 / 1,
 		warming: 10000,
-		repetation: 1000000,
-		reflesh: 30000000,
-		random: true
+		repetation: 5000000,
+		//reflesh: 30000000,
+		reflesh: 5000000,
+		random: false 
 	};
 	var status = {};
 	window.onload = function() {
@@ -32,7 +33,11 @@
 	};
 	var initialize = function() {
 		if(config.random) {
-			randomize();
+			if(status.cont) {
+				config.a += 0.01;
+			} else {
+				randomize();
+			}
 		}
 		status.counter = 0;
 		status.bin = [];
@@ -41,28 +46,51 @@
 		}
 		status.x = 0;
 		status.y = 0;
-		status.ragian = Math.random() * Math.PI * 2;
+		if(!status.cont) {
+			status.ragian = Math.random() * Math.PI * 2;
+		}
 		generation();
 	};
 	var generation = function() {
+		var start = Date.now();
 		for(var i = 0; i < config.repetation; i++) {
+			if(status.counter >= config.reflesh) {
+				status.cont = true;
+				initialize();
+				return;
+			}
 			status.counter++;
 			var nx = Math.sin(config.a * status.y) - Math.cos(config.b * status.x);
 			var ny = Math.sin(config.c * status.x) - Math.cos(config.d * status.y);
 			status.x = nx;
 			status.y = ny;
-			if(status.counter > config.warming) {
+			if(status.counter >= config.warming) {
 				var pos = ((nx / 4 + 0.5) * config.width) | 0 + (((ny / 4 + 0.5) * config.height) | 0) * config.width;
 				status.bin[pos]++;
+				if(status.counter == config.warming) {
+					if(show(true)) {
+						return;
+					}
+				}
 			}
 		}
-		show();
+		if(show()) {
+			return;
+		}
 		status.counterDIV && (status.counterDIV.innerHTML = status.counter);
-		setTimeout(generation, 0);
+		//setTimeout(generation, 1000);
+		console.log(Date.now() - start);
 	};
-	var makeColor = function(ratio, ragian) {
+	var makeColor = function(ratio, ragian, f) {
 		if(ratio > 1) {
 			ratio = 1;
+		}
+		if(f) {
+			var c = 1 - Math.pow(1 - ratio, 150);
+			if(c == 0) {
+				return {r:0, g:0, b:0};
+			}
+			return {r:255, g:255, b:255};
 		}
 		if(ragian < 0) {
 			ragian += Math.PI * 2;
@@ -92,7 +120,7 @@
 			b: (Math.pow(c, 3 - b * 1.5) * 255) | 0
 		};
 	};
-	var show = function() {
+	var show = function(f) {
 		var data = status.imageData.data;
 		var pixels = 0;
 		for(var x = 0; x < config.width; x++) {
@@ -101,7 +129,7 @@
 				var ratio = status.bin[pos] * config.height / (status.counter - config.warming);
 				pos *= 4;
 				
-				var c = makeColor(ratio, status.ragian);
+				var c = makeColor(ratio, status.ragian, f);
 				data[pos + 0] = c.r;
 				data[pos + 1] = c.g;
 				data[pos + 2] = c.b;
@@ -111,9 +139,13 @@
 				}
 			}
 		}
-		ctx.putImageData(status.imageData, 0, 0);
-		if(pixels < config.width * config.height / 200 || status.counter > config.reflesh) {
+		if(!f) {
+			ctx.putImageData(status.imageData, 0, 0);
+		}
+		if(pixels < config.width * config.height / 200) {
+			status.cont = false;
 			initialize();
+			return true;
 		}
 	};
 })();

@@ -28,32 +28,17 @@
 			data[i *4 + 2] = (v >> 8) & 0xFF;
 			data[i *4 + 3] = v & 0xFF;
 			data[i *4 + 3] = 0xFF;
+			/*
 			if(i < 2) {
 				console.log(f * 4 - 2);
 				console.log(data[i*4+0],data[i*4+1],data[i*4+2],data[i*4+3]);
 			}
+			*/
 		}
 		ctx.putImageData(imageData, 0, 0);
 	};
-	var getData = function() {
-		var dc = document.createElement("canvas");
-		dc.width = dc.height = canvas.width;
-		var ctx = dc.getContext("2d");
-		ctx.drawImage(canvas, 0, 0);
-		document.body.appendChild(dc);
-		var data = ctx.getImageData(0, 0, canvas.width, canvas.width).data;
-		for(var i= 0; i< 2; i++) {
-			var value = 0;
-			value += data[i* 4 + 0] * 0x1000000;
-			value += data[i* 4 + 1] * 0x10000;
-			value += data[i* 4 + 2] * 0x100;
-			value += data[i* 4 + 3];
-			console.log((value / 0xFFFFFFFF) * 4 - 2);
-			console.log(data[i*4+0],data[i*4+1],data[i*4+2],data[i*4+3]);
-		}
-	};
 	var initialize = function() {
-		document.body.appendChild(img);
+		//document.body.appendChild(img);
 		var option = { premultipliedAlpha: false };
 		gl = canvas.getContext("experimental-webgl", option) || canvas.getContext("webgl", option);
 		if(!gl) {
@@ -87,10 +72,8 @@
 		}
 		gl.useProgram(prog);
 
-		for(var i = 0; i < 1; i++) {
-			loadBuffer();
-			drawFrame();
-		}
+		loadBuffer();
+		drawFrame();
 		getData();
 	};
 	var buf;
@@ -123,5 +106,24 @@
 		gl.uniform1i(gl.getUniformLocation(prog, "texture"), 0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
+	};
+
+	var bin = [];
+	var getData = function() {
+		var dc = document.createElement("canvas");
+		dc.width = dc.height = canvas.width;
+		var ctx = dc.getContext("2d");
+		ctx.drawImage(canvas, 0, 512, 512, 512, 0, 0, 512, 512);
+		document.body.appendChild(dc);
+		var data = ctx.getImageData(0, 0, canvas.width, canvas.width).data;
+		for(var i= 0; i< 2; i++) {
+			var value = 0;
+			value += data[i* 4 + 0] * 0x1000000;
+			value += data[i* 4 + 1] * 0x10000;
+			value += data[i* 4 + 2] * 0x100;
+			value += data[i* 4 + 3];
+			console.log((value / 0xFFFFFFFF) * 4 - 2);
+			console.log(data[i*4+0],data[i*4+1],data[i*4+2],data[i*4+3]);
+		}
 	};
 })();

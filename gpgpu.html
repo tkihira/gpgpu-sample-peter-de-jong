@@ -1,5 +1,5 @@
 <html><head><title>glsl test</title>
-<script src="test.js"></script>
+<script src="gpgpu.js"></script>
 <script type="glsl" id="vs">
 precision mediump float;
 attribute vec2 vertex;
@@ -12,10 +12,10 @@ void main() {
 </script>
 <script type="glsl" id="fs">
 precision mediump float;
-#define SIZE 512.
-#define ITERATION 10000
+#define ITERATION 1000
 varying vec2 pos;
 uniform sampler2D texture;
+uniform float glSize;
 uniform vec4 param;
 float decode(vec4 v) {
 	float r = (v.r * 255.) * 16777216.;
@@ -48,10 +48,10 @@ void main() {
 	float isX;
 	if(floor(xpos / 2.0) == xpos / 2.0) {
 		xv = texture2D(texture, pos);
-		yv = texture2D(texture, vec2((xpos + 1.5) / SIZE, pos.y));
+		yv = texture2D(texture, vec2((xpos + 1.5) / glSize, pos.y));
 		isX = 1.0;
 	} else {
-		xv = texture2D(texture, vec2((xpos - 0.5) / SIZE, pos.y));
+		xv = texture2D(texture, vec2((xpos - 0.5) / glSize, pos.y));
 		yv = texture2D(texture, pos);
 		isX = 0.0;
 	}
@@ -88,13 +88,13 @@ void main() {
 		// ny
 		n = sin(x * param.z) - cos(y * param.w);
 	}
-	if(gl_FragCoord.y >= SIZE) {
+	if(gl_FragCoord.y >= glSize) {
 		gl_FragColor = encode(n);
 	} else {
 		vec4 v;
-		int p = int(((n + 2.) / 4.) * 512.);
-		v.x = float(p / 256);
-		v.y = float(p - (p / 256) * 256);
+		float p = float(((n + 2.) / 4.) * 512.);
+		v.x = float(int(p / 256.)) / 255.;
+		v.y = float(int(p - float(int(p / 256.) * 256))) / 255.;
 		v.a = 1.0;
 		gl_FragColor = v;
 		//gl_FragColor = vec4(1., 0., 0., 1.);
@@ -107,5 +107,5 @@ void main() {
 }
 </script>
 </head>
-<body><canvas id="canvas" width="512" height="1024"></canvas></body>
+<body><canvas id="canvas" width="512" height="512"></canvas></body>
 </html>
