@@ -5,7 +5,8 @@
 		a: -2.7,
 		b: -0.09,
 		c: -0.86,
-		d: -2.2
+		d: -2.2,
+		random: true
 	};
 	var status = {};
 	var gl;
@@ -14,9 +15,13 @@
 		glInitialize();
 		var dataCanvas = createData();
 		glSetTexture(dataCanvas);
-		glDraw();
-		glGetData();
-		showData();
+		(function tick() {
+			glDraw();
+			glGetData();
+			showData();
+			glSetTexture(status.getterCanvas);
+			setTimeout(tick, 0);
+		})();
 	};
 	var initialize = function() {
 		status.bin = [];
@@ -24,6 +29,13 @@
 			status.bin[i] = 0;
 		}
 		status.counter = 0;
+		if(config.random) {
+			config.a = Math.random() * 4 - 2;
+			config.b = Math.random() * 4 - 2;
+			config.c = Math.random() * 4 - 2;
+			config.d = Math.random() * 4 - 2;
+		}
+		status.ragian = Math.random() * Math.PI * 2;
 	};
 	var glInitialize = function() {
 		var option = { premultipliedAlpha: false };
@@ -113,8 +125,12 @@
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	};
 	var glGetData = function() {
-		var canvas = document.createElement("canvas");
-		canvas.width = canvas.height = config.glSize;
+		var canvas = status.getterCanvas;
+		if(!canvas) {
+			canvas = document.createElement("canvas");
+			status.getterCanvas = canvas;
+			canvas.width = canvas.height = config.glSize;
+		}
 		//document.body.appendChild(canvas);
 		var ctx = canvas.getContext("2d");
 		ctx.drawImage(gl.canvas, 0, config.glSize, config.glSize, config.glSize, 0, 0, config.glSize, config.glSize);
@@ -125,18 +141,54 @@
 			status.bin[x * config.size + y]++;
 			status.counter++;
 		}
+		ctx.drawImage(gl.canvas, 0, 0, config.glSize, config.glSize, 0, 0, config.glSize, config.glSize);
+	};
+	var makeColor = function(ratio, ragian, f) {
+		if(ratio > 1) {
+			ratio = 1;
+		}
+		if(ragian < 0) {
+			ragian += Math.PI * 2;
+		}
+		if(ragian >= Math.PI * 2) {
+			ragian -= Math.PI * 2;
+		}
+		var h1 = (ragian * 3 / Math.PI) | 0;
+		var s = 1;
+		var f = ragian / (Math.PI / 3) - h1;
+		var p = 1 * (1 - s);
+		var q = 1 * (1 - f * s);
+		var t = 1 * (1 - (1 - f) * s);
+		var r, g, b;
+		switch(h1) {
+			case 0: r = 1; g = t; b = p; break;
+			case 1: r = q; g = 1; b = p; break;
+			case 2: r = p; g = 1; b = t; break;
+			case 3: r = p; g = q; b = 1; break;
+			case 4: r = t; g = p; b = 1; break;
+			case 5: r = 1; g = p; b = 1; break;
+		}
+		var c = 1 - Math.pow(1 - ratio, 150);
+		return {
+			r: (Math.pow(c, 3 - r * 1.5) * 255) | 0,
+			g: (Math.pow(c, 3 - g * 1.5) * 255) | 0,
+			b: (Math.pow(c, 3 - b * 1.5) * 255) | 0
+		};
 	};
 	var showData = function() {
 		var canvas = document.getElementById("canvas");
-		//canvas.width = canvas.height = config.glSize;
+		//canvas.width = canvas.height = config.size;
 		var ctx = canvas.getContext("2d");
 		var imageData = ctx.createImageData(config.size, config.size);
 		var data = imageData.data;
 		for(var i = 0; i < canvas.width * canvas.width; i++) {
-			var c = (status.bin[i] != 0)? 255: 0;
-			data[i * 4 + 0] = c;
-			data[i * 4 + 1] = c;
-			data[i * 4 + 2] = c;
+			var ratio = status.bin[i] * config.size / status.counter;
+			//var c = (status.bin[i] != 0)? 255: 0;
+			var c = makeColor(ratio, status.ragian);
+			//console.log(c);
+			data[i * 4 + 0] = c.r;
+			data[i * 4 + 1] = c.b;
+			data[i * 4 + 2] = c.b;
 			data[i * 4 + 3] = 255;
 		}
 		ctx.putImageData(imageData, 0, 0);
